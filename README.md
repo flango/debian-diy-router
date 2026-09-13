@@ -367,5 +367,17 @@ Endpoint = <PUBLIC_WAN_IP_OR_DDNS>:51820
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 ```
+Get keys
+```bash
+sudo -i
+cat server_public.key
+cat server_private.key
+cat phone_public.key
+cat phone_private.key
+cat tablet_public.key
+cat tabler_private.key
+cat laptop_public.key
+cat laptop_private.key
+```
 Render an administrative, inline terminal deployment link profile for rapid QR capture over the air:
 bash qrencode -t ansiutf8 < phone.conf
