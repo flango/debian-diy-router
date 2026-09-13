@@ -121,7 +121,7 @@ net.ipv6.conf.default.forwarding = 0
 ```
 
 ### 4. Congestion Control & Fiber Latency Tweaks
-Use the correct congestion scheduler for your envireoment / setup
+Use the correct congestion scheduler for your enviroment / setup
 alongside targeted buffer parameters:
 
 ```bash
