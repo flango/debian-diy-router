@@ -379,7 +379,7 @@ cat server_private.key
 cat phone_public.key
 cat phone_private.key
 cat tablet_public.key
-cat tabler_private.key
+cat tablet_private.key
 cat laptop_public.key
 cat laptop_private.key
 exit
