@@ -189,26 +189,22 @@ nano rules.v4
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 COMMIT
-
 *filter
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
 :OUTPUT ACCEPT [0:0]
-
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
--A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -i lo -j ACCEPT
--A INPUT -i enp3s0 -p icmp -m icmp --icmp-type 8 -j ACCEPT
 -A INPUT -i enp3s0 -j ACCEPT
 -A INPUT -i wg0 -j ACCEPT
--A INPUT -i enp2s0 -p udp --dport 51820 -j ACCEPT
+-A INPUT -i enp2s0 -p udp -m udp --dport 51820 -j ACCEPT
+-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 -A FORWARD -i enp3s0 -o enp2s0 -j ACCEPT
 -A FORWARD -i wg0 -o enp2s0 -j ACCEPT
 -A FORWARD -i enp3s0 -o wg0 -j ACCEPT
 -A FORWARD -i wg0 -o enp3s0 -j ACCEPT
--A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+-A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 COMMIT
-
 *nat
 :PREROUTING ACCEPT [0:0]
 :INPUT ACCEPT [0:0]
@@ -227,19 +223,18 @@ nano rules.v6
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
 :OUTPUT ACCEPT [0:0]
-
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -i lo -j ACCEPT
--A INPUT -i enp3s0 -p icmpv6 -j ACCEPT
--A INPUT -i wg0 -p icmpv6 -j ACCEPT
--A FORWARD -i enp3s0 -p icmpv6 -j ACCEPT
--A INPUT -i enp2s0 -p icmpv6 --icmpv6-type packet-too-big -j ACCEPT
--A INPUT -i enp2s0 -p icmpv6 --icmpv6-type time-exceeded -j ACCEPT
--A INPUT -i enp2s0 -p icmpv6 --icmpv6-type parameter-problem -j ACCEPT
--A INPUT -p icmpv6 --icmpv6-type echo-request -j ACCEPT
+-A INPUT -i enp3s0 -p ipv6-icmp -j ACCEPT
+-A INPUT -i wg0 -p ipv6-icmp -j ACCEPT
+-A INPUT -i enp2s0 -p ipv6-icmp -m icmp6 --icmpv6-type 2 -j ACCEPT
+-A INPUT -i enp2s0 -p ipv6-icmp -m icmp6 --icmpv6-type 3 -j ACCEPT
+-A INPUT -i enp2s0 -p ipv6-icmp -m icmp6 --icmpv6-type 4 -j ACCEPT
+-A INPUT -p ipv6-icmp -m icmp6 --icmpv6-type 128 -j ACCEPT
+-A INPUT -i enp2s0 -j DROP
+-A FORWARD -i enp3s0 -p ipv6-icmp -j ACCEPT
 -A FORWARD -i enp3s0 -o enp2s0 -j REJECT --reject-with icmp6-adm-prohibited
 -A FORWARD -i wg0 -o enp2s0 -j REJECT --reject-with icmp6-adm-prohibited
--A INPUT -i enp2s0 -j DROP
 -A FORWARD -i enp2s0 -j DROP
 COMMIT
 ```
