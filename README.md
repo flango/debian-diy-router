@@ -388,6 +388,7 @@ exit
 Render an administrative, inline terminal deployment link profile for rapid QR capture over the air:
 ```bash
 qrencode -t ansiutf8 < phone.conf
+```
 ---
 
 ## 📄 License
