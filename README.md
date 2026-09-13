@@ -325,6 +325,8 @@ sudo mkdir -p /etc/wireguard && sudo -i
 cd /etc/wireguard
 umask 077
 
+```bash
+cd /root
 # Server
 wg genkey | tee server_private.key | wg pubkey > server_public.key
 
