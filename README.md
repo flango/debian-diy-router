@@ -196,8 +196,6 @@ COMMIT
 -A INPUT -i enp3s0 -j ACCEPT
 -A INPUT -i wg0 -j ACCEPT
 -A INPUT -i enp2s0 -p udp --dport 51820 -j ACCEPT
--A INPUT -i enp2s0 -p tcp --dport 443 -j DROP
--A INPUT -i enp2s0 -p tcp --dport 80 -j DROP
 -A FORWARD -i enp3s0 -o enp2s0 -j ACCEPT
 -A FORWARD -i wg0 -o enp2s0 -j ACCEPT
 -A FORWARD -i enp3s0 -o wg0 -j ACCEPT
