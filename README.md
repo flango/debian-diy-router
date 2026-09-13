@@ -386,3 +386,10 @@ exit
 ```
 Render an administrative, inline terminal deployment link profile for rapid QR capture over the air:
 bash qrencode -t ansiutf8 < phone.conf
+
+---
+
+## 📄 License
+
+This project is open-source and licensed under the **MIT License**. Feel free to use, modify, and distribute it as you see fit. See the accompanying `LICENSE` file for full legal details.
+
