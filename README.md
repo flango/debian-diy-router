@@ -9,6 +9,12 @@ This guide walks you through transforming a clean install of **Debian 13 (Trixie
 * **Secure VPN Gateway:** High-performance WireGuard server pre-configured with QR code profile generation for mobile devices.
 
 ---
+## Quick info
+* WAN = enp2s0
+* LAN = enp3s0
+* WIREGUARD = wg0
+
+---
 
 ## Step 1: Base System Optimization
 
