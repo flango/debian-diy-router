@@ -350,7 +350,8 @@ AllowedIPs = 10.8.0.3/32
 [Peer]
 PublicKey = <PASTE_CONTENTS_OF_laptop_public.key>
 AllowedIPs = 10.8.0.4/32
-bash
+```
+```bash
 exit
 sudo systemctl enable --now wg-quick@wg0
 ```
