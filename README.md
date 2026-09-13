@@ -339,6 +339,8 @@ wg genkey | tee laptop_private.key | wg pubkey > laptop_public.key
 ### 2. Server Interface Assignment (`wg0.conf`)
 ```bash
 nano /etc/wireguard/wg0.conf
+```
+```ini
 [Interface]
 PrivateKey = <PASTE_CONTENTS_OF_server_private.key>
 Address = 10.8.0.1/24
@@ -381,6 +383,7 @@ cat tablet_public.key
 cat tabler_private.key
 cat laptop_public.key
 cat laptop_private.key
+exit
 ```
 Render an administrative, inline terminal deployment link profile for rapid QR capture over the air:
 bash qrencode -t ansiutf8 < phone.conf
