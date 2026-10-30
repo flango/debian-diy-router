@@ -264,17 +264,27 @@ dns_transport_list:
 tls_authentication: GETDNS_AUTHENTICATION_REQUIRED
 tls_query_padding_blocksize: 128
 edns_client_subnet_private : 1
+round_robin_upstreams: 0
 idle_timeout: 10000
+timeout: 1500
 
 listen_addresses:
   - 127.0.0.1@5353
   - 0::1@5353
 
 upstream_recursive_servers:
+
+# PRIMARY: Quad9 Malware Filtering & DNSSEC
+  - address_data: 9.9.9.9
+    tls_auth_name: "dns.quad9.net"
+  - address_data: 149.112.112.112
+    tls_auth_name: "dns.quad9.net"
+
+# FALLBACK: Cloudflare (Malware Blocking Only)
   - address_data: 1.1.1.2
-    tls_auth_name: "://cloudflare-dns.com"
+    tls_auth_name: "security.cloudflare-dns.com"
   - address_data: 1.0.0.2
-    tls_auth_name: "://cloudflare-dns.com"
+    tls_auth_name: "security.cloudflare-dns.com"
 ```
 ```bash
 sudo systemctl enable --now stubby
@@ -291,7 +301,7 @@ sudo nano /etc/dnsmasq.conf
 ```
 ```ini
 except-interface=enp2s0
-listen-address=::1,127.0.0.1,192.168.10.1,10.8.0.1
+listen-address=127.0.0.1,192.168.10.1,10.8.0.1
 domain=asgard
 local=/asgard/
 expand-hosts
@@ -308,7 +318,6 @@ addn-hosts=/etc/hosts_adblocking
 cache-size=30000
 
 server=127.0.0.1#5353
-server=::1#5353
 filter-AAAA
 ```
 ```bash
