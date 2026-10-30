@@ -309,6 +309,7 @@ domain-needed
 bogus-priv
 no-resolv
 
+#here DHCP range is set from 120 to 180, thats more than enough for me, static ips i use outside that range
 dhcp-range=192.168.10.120,192.168.10.180,255.255.255.0,12h
 dhcp-option=option:router,192.168.10.1
 dhcp-option=option:dns-server,192.168.10.1
@@ -324,8 +325,35 @@ filter-AAAA
 sudo touch /etc/hosts_adblocking
 sudo systemctl enable --now dnsmasq
 ```
+#### 1. DNSmasq DHCP and static addresses and hostnames
+```bash
+sudo nano /etc/dnsmasq.d/static_hosts.conf
+```
+```config
+dhcp-host=a1:a1:a1:1b:1b:ab,192.168.10.91,XBOXONES
+dhcp-host=00:00:01:00:00:00,192.168.10.92,XBOXONE
+dhcp-host=a0:a0:a0:1a:1a:ab,192.168.10.93,XBOXSERIESS
+dhcp-host=5c:b9:00:00:00:00,192.168.10.199,HPPRINTER
 
+```
+Replace my dummy mac addresses with your own, but use : as in how my dummy macs are presented,
+then the local ip address you want it to always have, and lastly hostname to make it easy to see and connect too.
+
+Now we need to make sure same hostnames are in our local hosts file that handle local lan adressing
+```bash
+sudo nano /etc/hosts
+```
+Copy below or replicate with yout own static set ip and hostname like in my examples
+
+```config
+# Local hosts
+192.168.10.91 XBOXONES
+192.168.10.92 XBOXONE
+192.168.10.93 XBOXSERIESS
+192.168.10.199 HPPRINTER
+```
 ---
+
 
 ## Step 5: WireGuard Endpoint Integration
 
