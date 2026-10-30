@@ -343,8 +343,9 @@ Now we need to make sure same hostnames are in our local hosts file that handle 
 ```bash
 sudo nano /etc/hosts
 ```
-Copy below or replicate with yout own static set ip and hostname like in my examples
-
+Copy below or replicate with your own static set ip's and hostnames like in my examples
+Local hosts is what interest us, just go below the written lines in your hosts file and create a #local hosts
+if it doesn't exists and write the IP and HOSTNAME beneath it.
 ```config
 # Local hosts
 192.168.10.91 XBOXONES
