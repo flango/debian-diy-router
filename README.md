@@ -325,7 +325,7 @@ filter-AAAA
 sudo touch /etc/hosts_adblocking
 sudo systemctl enable --now dnsmasq
 ```
-#### 1. DNSmasq DHCP and static addresses and hostnames
+#### DNSmasq DHCP and static addresses and hostnames
 ```bash
 sudo nano /etc/dnsmasq.d/static_hosts.conf
 ```
