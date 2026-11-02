@@ -25,7 +25,7 @@ Log in as `root` or use `sudo` to update the core system and pull down the requi
 sudo apt update && sudo apt upgrade -y
 
 sudo apt install htop nfs-kernel-server rpcbind openssh-server \
-dnsmasq iptables-persistent wireguard qrencode stubby \
+dnsmasq wireguard qrencode stubby \
 bind9-dnsutils zram-tools -y
 ```
 
@@ -177,6 +177,235 @@ sudo sysctl --load=/etc/sysctl.d/99-router-latency.conf
 > [!WARNING]
 > Double-check that your active LAN interface matches `enp3s0` exactly in the configuration blocks below before executing rules to avoid getting permanently locked out of SSH.
 
+### 1. Current Standard: nftables (Recommended)
+```bash
+nano nftables.conf
+```
+```config
+#!/usr/sbin/nft -f
+
+# 1. Clear any existing rules for a clean, atomic reload
+flush ruleset
+
+table inet filter {
+    # Define your IP sets natively (Shared cleanly across filter and NAT chains)
+    set offline {
+        type ipv4_addr
+        elements = { 192.168.10.201, 192.168.10.202, 192.168.10.203, 192.168.10.204 }
+    }
+
+    set dns_bypass {
+        type ipv4_addr
+        elements = { 192.168.10.91, 192.168.10.92, 192.168.10.93, 192.168.10.99 }
+    }
+
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        # Allow established and related traffic (Stateful inspection)
+        ct state established,related accept
+
+        # Allow Loopback (Localhost) - handles both IPv4 and IPv6 loopback
+        iif "lo" accept
+
+        # --- Router-Only IPv6 ICMP Handling ---
+        # Allows necessary IPv6 ICMP types for the router's own WAN interface
+        ip6 nexthdr icmpv6 accept
+
+        # --- IPv4 Specific Rules ---
+        # Allow incoming Ping (ICMP Echo) only from the Local LAN
+        iif "enp3s0" icmp type echo-request accept
+
+        # Allow LAN and VPN clients access to local router services (DNS, DHCP, SSH)
+        iif "enp3s0" accept
+        iifname "wg0" accept # FIX: Prevents boot errors when wg0 is missing
+
+        # Allow WAN incoming connection for WireGuard handshake packets
+        iif "enp2s0" udp dport 51820 accept
+
+        # Explicitly drop any remaining incoming traffic hitting the WAN interface (enp2s0)
+        iif "enp2s0" drop
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+
+        # Allow established and related traffic (Stateful inspection)
+        ct state established,related accept
+
+        # OFFLINE SET BLOCKS (Checked immediately after established connections)
+        # Block offline set from sending data out to WAN (enp2s0)
+        iif "enp3s0" oif "enp2s0" ip saddr @offline drop
+
+        # Block unsolicited internet traffic (enp2s0) from hitting offline set
+        iif "enp2s0" oif "enp3s0" ip daddr @offline drop
+
+        # Block DoT so standard devices fall back to Port 53 (where they get hijacked to dnsmasq)
+        iif "enp3s0" ip saddr != @dns_bypass tcp dport 853 drop
+        iif "enp3s0" ip saddr != @dns_bypass udp dport 853 drop
+
+        # AUTOMATIC PORT FORWARDING FILTER
+        # Securely allows any traffic that matches a DNAT rule in the prerouting chain.
+        ct status dnat accept
+
+        # IPv4 Forwarding & Outbound Routing
+        # Route internal traffic out to the internet
+        iif "enp3s0" oif "enp2s0" accept
+        iifname "wg0" oif "enp2s0" accept # FIX: Prevents boot errors
+
+        # Inter-LAN / Inter-VPN Local Forwarding
+        iif "enp3s0" oifname "wg0" accept # FIX: Prevents boot errors
+        iifname "wg0" oif "enp3s0" accept # FIX: Prevents boot errors
+
+        # Dynamically fix MTU/MSS issues for WireGuard (TCPMSS clamping)
+        tcp flags & (syn|rst) == syn tcp option maxseg size set rt mtu
+
+        # IPv6 Drop and Safe Reject Rules
+        ## 1. Global Drops (Handles all unhandled traffic, including any rogue IPv6 transit)
+        iif "enp2s0" drop
+
+        ## 2. Reject internal IPv6 traffic trying to go out to WAN so devices instantly fail over to IPv4
+        iif "enp3s0" oif "enp2s0" meta nfproto ipv6 reject with icmpv6 type admin-prohibited
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+    }
+
+    # NAT CHAINS (Integrated safely inside the family-independent 'inet' table)
+    chain prerouting {
+        type nat hook prerouting priority filter; policy accept;
+
+        # FORCE ROUTER DNS (HIJACK PORT 53)
+        iif "enp3s0" ip saddr @dns_bypass accept
+
+        # For ALL other devices, redirect their Port 53 requests to local dnsmasq
+        iif "enp3s0" udp dport 53 redirect to :53
+        iif "enp3s0" tcp dport 53 redirect to :53
+
+        # PORT FORWARDING DNAT RULES
+
+        # EXAMPLE (192.168.10.70)
+        ## FTP
+        #iif "enp2s0" tcp dport { 990, 40000-40100 } dnat ip to 192.168.10.70
+        ## MINECRAFT
+        #iif "enp2s0" tcp dport 19134 dnat ip to 192.168.10.70
+        #iif "enp2s0" udp dport { 19134, 19145-19154 } dnat ip to 192.168.10.70
+        ## SUNSHINE
+        #iif "enp2s0" tcp dport { 47984, 47989, 48010 } dnat ip to 192.168.10.70
+        #iif "enp2s0" udp dport { 47998-48000, 48002, 48010 } dnat ip to 192.168.10.70
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority filter; policy accept;
+
+        # NAT/Masquerade local IPv4 traffic into the WAN interface IP
+        oif "enp2s0" masquerade
+    }
+}
+
+```
+### 2. Quick info about config
+IPV6 only allowed for wan and router, blocked for lan
+Drop everything incoming by default unless rule is defined like port forwarding
+offline set is meant for older devices that need no internet or internet trying to talk to them,
+like older access points, managed switches, old avr and such.
+dns_bypass is for devices that might need other dns resolvers like a gaming console if you use a massive ad blocking file that blocks microsoft servers that handle achievement tracking and such.
+DNS, port 853 is dropped unless in dns_bypass set, port 53 is hijacked and pointed to dnsmasq.
+Portforwarding example is left to show how to forward ports, ranges and protocol to ip / host.
+
+### 3. apply default firewall template
+#### check config, make sure wan and lan eth matches yours
+```bash
+sudo nft --check --file nftables.conf
+```
+#### copy and apply strict permissions just incase
+```bash
+sudo cp nftables.conf /etc/nftables.conf
+sudo chown root:root /etc/nftables.conf
+sudo chmod 600 /etc/nftables.conf
+```
+#### enable service, start and status
+```bash
+sudo systemctl enable nftables.service
+sudo systemctl restart nftables.service
+sudo systemctl status nftables.service
+```
+#### now lets check if the firewall rules are active
+```bash
+sudo nft list ruleset
+```
+##### should like similar to below
+<details>
+table inet filter {
+	set offline {
+		type ipv4_addr
+		elements = { 192.168.10.201, 192.168.10.202, 192.168.10.203, 192.168.10.204 }
+	}
+
+	set dns_bypass {
+		type ipv4_addr
+		elements = { 192.168.10.91, 192.168.10.92, 192.168.10.93, 192.168.10.99 }
+	}
+
+	chain input {
+		type filter hook input priority filter; policy drop;
+		ct state established,related accept
+		iif "lo" accept
+		ip6 nexthdr ipv6-icmp accept
+		iif "enp3s0" icmp type echo-request accept
+		iif "enp3s0" accept
+		iifname "wg0" accept
+		iif "enp2s0" udp dport 51820 accept
+		iif "enp2s0" drop
+	}
+
+	chain forward {
+		type filter hook forward priority filter; policy drop;
+		ct state established,related accept
+		iif "enp3s0" oif "enp2s0" ip saddr @offline drop
+		iif "enp2s0" oif "enp3s0" ip daddr @offline drop
+		iif "enp3s0" ip saddr != @dns_bypass tcp dport 853 drop
+		iif "enp3s0" ip saddr != @dns_bypass udp dport 853 drop
+		ct status dnat accept
+		iif "enp3s0" oif "enp2s0" accept
+		iifname "wg0" oif "enp2s0" accept
+		iif "enp3s0" oifname "wg0" accept
+		iifname "wg0" oif "enp3s0" accept
+		tcp flags & (syn | rst) == syn tcp option maxseg size set rt mtu
+		iif "enp2s0" drop
+		iif "enp3s0" oif "enp2s0" reject with icmpv6 admin-prohibited
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+	}
+
+	chain prerouting {
+		type nat hook prerouting priority filter; policy accept;
+		iif "enp3s0" ip saddr @dns_bypass accept
+		iif "enp3s0" udp dport 53 redirect to :53
+		iif "enp3s0" tcp dport 53 redirect to :53
+	}
+
+	chain postrouting {
+		type nat hook postrouting priority filter; policy accept;
+		oif "enp2s0" masquerade
+	}
+}
+
+</details>
+
+
+<details>
+    <summary>Click here to view the legacy IPTables setup (Deprecated)</summary>
+
+```bash
+sudo apt install iptables-persistent -y
+```
+### 2.
+offline
+
 ### 1. IPv4 Filter Set (`rules.v4`)
 ```bash
 nano rules.v4
@@ -246,7 +475,7 @@ sudo iptables-restore < rules.v4
 sudo ip6tables-restore < rules.v6
 sudo netfilter-persistent save
 ```
-
+</details>
 ---
 
 ## Step 4: Encrypted DNS Stacking (Stubby + DNSmasq)
