@@ -501,7 +501,6 @@ timeout: 1500
 
 listen_addresses:
   - 127.0.0.1@5353
-  - 0::1@5353
 
 upstream_recursive_servers:
 
@@ -541,7 +540,7 @@ bogus-priv
 no-resolv
 
 #here DHCP range is set from 120 to 180, thats more than enough for me, static ips i use outside that range
-dhcp-range=192.168.10.120,192.168.10.180,255.255.255.0,12h
+dhcp-range=192.168.10.120,192.168.10.180,255.255.255.0,24h
 dhcp-option=option:router,192.168.10.1
 dhcp-option=option:dns-server,192.168.10.1
 dhcp-authoritative
