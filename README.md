@@ -628,7 +628,7 @@ AllowedIPs = 10.8.0.4/32
 exit
 sudo systemctl enable --now wg-quick@wg0
 ```
-3. Mobile Device Onboarding (QR Deploy)
+### 5.3 Mobile Device Onboarding (QR Deploy)
 Construct local peer file structures matching individual hardware profiles (e.g., phone.conf):
 ```ini
 [Interface]
