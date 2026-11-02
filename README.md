@@ -18,7 +18,7 @@ This guide walks you through transforming a clean install of **Debian 13 (Trixie
 
 ## Step 1: Base System Optimization
 
-### 1. Update & Dependencies
+### 1.1 Update & Dependencies
 Log in as `root` or use `sudo` to update the core system and pull down the required routing and networking tools:
 
 ```bash
@@ -29,7 +29,7 @@ dnsmasq wireguard qrencode stubby \
 bind9-dnsutils zram-tools -y
 ```
 
-### 2. SSD Write Minimization & Zram
+### 1.2 SSD Write Minimization & Zram
 Set up compressed RAM layout using `lz4` compression to lower SSD wear cycles.
 
 ```bash
@@ -56,7 +56,7 @@ Load the active optimizations:
 sudo sysctl --load=/etc/sysctl.d/99-zram-opt.conf
 ```
 
-### 3. Volatile System Logging (Optional)
+### 1.3 Volatile System Logging (Optional)
 Move standard system runtime logs into temporary volatile memory space (`tmpfs`) to further prevent disk wear:
 
 ```bash
@@ -73,7 +73,7 @@ Restart the logging daemon:
 sudo systemctl restart systemd-journald
 ```
 
-### 4. Enable Storage TRIM
+### 1.4 Enable Storage TRIM
 Verify your underlying SSD trim timers are active to keep long-term operational storage performance crisp:
 
 ```bash
@@ -88,13 +88,13 @@ sudo systemctl enable --now fstrim.timer
 
 ## Step 2: Interface & Routing Topology
 
-### 1. Identify Network Interface Cards (NICs)
+### 2.1 Identify Network Interface Cards (NICs)
 Locate your exact physical WAN and LAN interface designations:
 ```bash
 ip link
 ```
 
-### 2. Configure Local Networking
+### 2.2 Configure Local Networking
 Map out static LAN allocations and standard dynamic WAN links:
 ```bash
 sudo nano /etc/network/interfaces
@@ -115,7 +115,7 @@ Cycle the network service stacks to activate parameters:
 sudo systemctl restart networking
 ```
 
-### 3. Kernel IP Forwarding
+### 2.3 Kernel IP Forwarding
 Instruct the Debian kernel to route traffic between interfaces dynamically:
 ```bash
 sudo nano /etc/sysctl.d/99-ipforward.conf
@@ -126,7 +126,7 @@ net.ipv6.conf.all.forwarding = 0
 net.ipv6.conf.default.forwarding = 0
 ```
 
-### 4. Congestion Control & Fiber Latency Tweaks
+### 2.4 Congestion Control & Fiber Latency Tweaks
 Use the correct congestion scheduler for your enviroment / setup
 alongside targeted buffer parameters:
 
@@ -177,7 +177,7 @@ sudo sysctl --load=/etc/sysctl.d/99-router-latency.conf
 > [!WARNING]
 > Double-check that your active LAN interface matches `enp3s0` exactly in the configuration blocks below before executing rules to avoid getting permanently locked out of SSH.
 
-### 1. Current Standard: nftables (Recommended)
+### 3.1 Current Standard: nftables (Recommended)
 ```bash
 nano nftables.conf
 ```
@@ -305,16 +305,17 @@ table inet filter {
 }
 
 ```
-### 2. Quick info about config
-IPV6 only allowed for wan and router, blocked for lan
-Drop everything incoming by default unless rule is defined like port forwarding
+### 3.2 Quick info about config
+IPV6 only allowed for wan and router, blocked for lan.  
+Drop everything incoming by default unless rule is defined like port forwarding.  
 offline set is meant for older devices that need no internet or internet trying to talk to them,
-like older access points, managed switches, old avr and such.
-dns_bypass is for devices that might need other dns resolvers like a gaming console if you use a massive ad blocking file that blocks microsoft servers that handle achievement tracking and such.
-DNS, port 853 is dropped unless in dns_bypass set, port 53 is hijacked and pointed to dnsmasq.
-Portforwarding example is left to show how to forward ports, ranges and protocol to ip / host.
+like older access points, managed switches, old avr and such.  
+dns_bypass is for devices that might need other dns resolvers like a gaming console if you use a  
+massive ad blocking file that blocks microsoft servers that handle achievement tracking and such.  
+DNS, port 853 is dropped unless in dns_bypass set, port 53 is hijacked and pointed to dnsmasq.  
+Portforwarding example is left to show how to forward ports, ranges and protocol to ip / host.  
 
-### 3. apply default firewall template
+### 3.3 apply default firewall template
 #### check config, make sure wan and lan eth matches yours
 ```bash
 sudo nft --check --file nftables.conf
@@ -403,10 +404,9 @@ table inet filter {
 ```bash
 sudo apt install iptables-persistent -y
 ```
-### 2.
-offline
+### 3. Firewall Construction (IPv4 & IPv6 Templates)
 
-### 1. IPv4 Filter Set (`rules.v4`)
+#### 3.1 IPv4 Filter Set (`rules.v4`)
 ```bash
 nano rules.v4
 ```
@@ -443,7 +443,7 @@ COMMIT
 COMMIT
 ```
 
-### 2. IPv6 Filter Set (`rules.v6`)
+#### 3.2 IPv6 Filter Set (`rules.v6`)
 ```bash
 nano rules.v6
 ```
@@ -468,7 +468,7 @@ nano rules.v6
 COMMIT
 ```
 
-### 3. Commit Rules System-Wide
+#### 3.3 Commit Rules System-Wide
 Restore the local target files straight into operating memory, then use `netfilter-persistent` to auto-commit them permanently across reboots:
 ```bash
 sudo iptables-restore < rules.v4
@@ -480,7 +480,7 @@ sudo netfilter-persistent save
 
 ## Step 4: Encrypted DNS Stacking (Stubby + DNSmasq)
 
-### 1. Deploy Stubby DoT Configurations
+### 4.1 Deploy Stubby DoT Configurations
 Overwrite your default configuration layout with an isolated localhost-bound DNS-over-TLS query profile utilizing secure Cloudflare upstream targets:
 
 ```bash
@@ -520,7 +520,7 @@ sudo systemctl enable --now stubby
 dig @127.0.0.1 -p 5353 google.com
 ```
 
-### 2. Configure DNSmasq Local Resolver
+### 4.2 Configure DNSmasq Local Resolver
 Tie local client caching directly into the background cryptographic Stubby listener loop:
 Copy your own adblocking hosts file to /etc/hosts_adblocking,
 if you dont have one use touch command to set a dummy file that can be replaced later
@@ -587,7 +587,7 @@ if it doesn't exists and write the IP and HOSTNAME beneath it.
 
 ## Step 5: WireGuard Endpoint Integration
 
-### 1. Key Generation
+### 5.1 Key Generation
 ```bash
 sudo mkdir -p /etc/wireguard && sudo -i
 cd /etc/wireguard
@@ -603,7 +603,7 @@ wg genkey | tee tablet_private.key | wg pubkey > tablet_public.key
 wg genkey | tee laptop_private.key | wg pubkey > laptop_public.key
 ```
 
-### 2. Server Interface Assignment (`wg0.conf`)
+### 5.2 Server Interface Assignment (`wg0.conf`)
 ```bash
 nano /etc/wireguard/wg0.conf
 ```
