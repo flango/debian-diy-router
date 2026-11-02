@@ -476,7 +476,9 @@ sudo ip6tables-restore < rules.v6
 sudo netfilter-persistent save
 ```
 </details>
+
 ---
+
 
 ## Step 4: Encrypted DNS Stacking (Stubby + DNSmasq)
 
