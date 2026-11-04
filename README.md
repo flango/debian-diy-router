@@ -1,7 +1,7 @@
 # Heimdall: A Modern Homebrew Gateway with Debian 13
 
 This guide walks you through transforming a clean install of **Debian 13 (Trixie)** into a high-performance, secure home router and gateway.
-Quick note, i do ad blocking on ipv4 level so ipv6 is killed for lan side to stop apps and devices from phoning home, port 53 gets hijacked as default unless in dns_bypass set, and offline set forces devices completely offline. Also port 853 (DoT) gets blocked automatically unless host ip is in dns_bypass set too.
+Quick note, i do ad blocking on ipv4 level so ipv6 is killed for lan side to stop apps and devices from phoning home, port 53 gets hijacked as default unless in dns_bypass set, same with port 853 used to DoT, and offline set forces devices completely offline.
 
 ## Features
 * **Bufferbloat Mitigation:** Optimized with BBR + FQ network congestion control for symmetrical fiber outside cgnat.
