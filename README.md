@@ -1,6 +1,7 @@
 # Heimdall: A Modern Homebrew Gateway with Debian 13
 
 This guide walks you through transforming a clean install of **Debian 13 (Trixie)** into a high-performance, secure home router and gateway.
+Quick note, i do ad blocking on ipv4 level so ipv6 is killed for lan side to stop apps and devices from phoning home, port 53 gets hijacked as default unless in dns_bypass set, and offline set forces devices completely offline. Also port 853 (DoT) gets blocked automatically unless host ip is in dns_bypass set too.
 
 ## Features
 * **Bufferbloat Mitigation:** Optimized with BBR + FQ network congestion control for symmetrical fiber outside cgnat.
@@ -209,28 +210,26 @@ table inet filter {
         iif "lo" accept
 
         # --- Router-Only IPv6 ICMP Handling ---
-        # Allows necessary IPv6 ICMP types for the router's own WAN interface
         ip6 nexthdr icmpv6 accept
 
         # --- IPv4 Specific Rules ---
-        # Allow incoming Ping (ICMP Echo) only from the Local LAN
         iif "enp3s0" icmp type echo-request accept
 
-        # Allow LAN and VPN clients access to local router services (DNS, DHCP, SSH)
+        # Allow LAN and VPN clients access to local router services
         iif "enp3s0" accept
-        iifname "wg0" accept # FIX: Prevents boot errors when wg0 is missing
+        iifname "wg0" accept 
 
         # Allow WAN incoming connection for WireGuard handshake packets
         iif "enp2s0" udp dport 51820 accept
 
-        # Explicitly drop any remaining incoming traffic hitting the WAN interface (enp2s0)
+        # Explicitly drop any remaining incoming traffic hitting the WAN interface
         iif "enp2s0" drop
     }
 
     chain forward {
         type filter hook forward priority filter; policy drop;
 
-        # Allow established and related traffic (Stateful inspection)
+        # Allow established and related traffic
         ct state established,related accept
 
         # OFFLINE SET BLOCKS (Checked immediately after established connections)
@@ -240,7 +239,7 @@ table inet filter {
         # Block unsolicited internet traffic (enp2s0) from hitting offline set
         iif "enp2s0" oif "enp3s0" ip daddr @offline drop
 
-        # Block DoT so standard devices fall back to Port 53 (where they get hijacked to dnsmasq)
+        # Block DoT so standard devices fall back to Port 53
         iif "enp3s0" ip saddr != @dns_bypass tcp dport 853 drop
         iif "enp3s0" ip saddr != @dns_bypass udp dport 853 drop
 
@@ -251,13 +250,13 @@ table inet filter {
         # IPv4 Forwarding & Outbound Routing
         # Route internal traffic out to the internet
         iif "enp3s0" oif "enp2s0" accept
-        iifname "wg0" oif "enp2s0" accept # FIX: Prevents boot errors
+        iifname "wg0" oif "enp2s0" accept 
 
         # Inter-LAN / Inter-VPN Local Forwarding
-        iif "enp3s0" oifname "wg0" accept # FIX: Prevents boot errors
-        iifname "wg0" oif "enp3s0" accept # FIX: Prevents boot errors
+        iif "enp3s0" oifname "wg0" accept 
+        iifname "wg0" oif "enp3s0" accept 
 
-        # Dynamically fix MTU/MSS issues for WireGuard (TCPMSS clamping)
+        # Dynamically fix MTU/MSS issues for WireGuard
         tcp flags & (syn|rst) == syn tcp option maxseg size set rt mtu
 
         # IPv6 Drop and Safe Reject Rules
@@ -272,11 +271,11 @@ table inet filter {
         type filter hook output priority filter; policy accept;
     }
 
-    # NAT CHAINS (Integrated safely inside the family-independent 'inet' table)
+    # FIX: Native NAT chains must utilize their standard hook priority levels
     chain prerouting {
-        type nat hook prerouting priority filter; policy accept;
+        type nat hook prerouting priority dstnat; policy accept;
 
-        # FORCE ROUTER DNS (HIJACK PORT 53)
+        # FORCE ROUTER DNS (HIJACK PORT 53 EXCEPTION)
         iif "enp3s0" ip saddr @dns_bypass accept
 
         # For ALL other devices, redirect their Port 53 requests to local dnsmasq
@@ -284,6 +283,11 @@ table inet filter {
         iif "enp3s0" tcp dport 53 redirect to :53
 
         # PORT FORWARDING DNAT RULES
+
+        # TOR (192.168.10.205)
+        ## TOR
+        iif "enp2s0" tcp dport 51419 dnat ip to 192.168.10.205
+        iif "enp2s0" udp dport 51419 dnat ip to 192.168.10.205
 
         # EXAMPLE (192.168.10.70)
         ## FTP
@@ -296,8 +300,9 @@ table inet filter {
         #iif "enp2s0" udp dport { 47998-48000, 48002, 48010 } dnat ip to 192.168.10.70
     }
 
+    # FIX: Native NAT chains must utilize their standard hook priority levels
     chain postrouting {
-        type nat hook postrouting priority filter; policy accept;
+        type nat hook postrouting priority srcnat; policy accept;
 
         # NAT/Masquerade local IPv4 traffic into the WAN interface IP
         oif "enp2s0" masquerade
