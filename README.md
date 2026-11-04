@@ -341,6 +341,11 @@ sudo systemctl status nftables.service
 ```bash
 sudo nft list ruleset
 ```
+
+<details>
+	    <summary>Click here to view how it should look like</summary>
+
+```text
 table inet filter {
 	set offline {
 		type ipv4_addr
@@ -398,7 +403,7 @@ table inet filter {
 	}
 }
 
-
+```
 </details>
 
 
