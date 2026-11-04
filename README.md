@@ -343,7 +343,7 @@ sudo nft list ruleset
 ```
 
 <details>
-	    <summary>Click here to view how it should look like</summary>
+	    <summary>Click here to view how the ruleset should look like</summary>
 
 ```text
 table inet filter {
