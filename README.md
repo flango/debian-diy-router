@@ -341,8 +341,6 @@ sudo systemctl status nftables.service
 ```bash
 sudo nft list ruleset
 ```
-<details>
-    <summary>Click here to view how it should look like</summary>
 table inet filter {
 	set offline {
 		type ipv4_addr
@@ -388,17 +386,18 @@ table inet filter {
 	}
 
 	chain prerouting {
-		type nat hook prerouting priority filter; policy accept;
+		type nat hook prerouting priority dstnat; policy accept;
 		iif "enp3s0" ip saddr @dns_bypass accept
 		iif "enp3s0" udp dport 53 redirect to :53
 		iif "enp3s0" tcp dport 53 redirect to :53
 	}
 
 	chain postrouting {
-		type nat hook postrouting priority filter; policy accept;
+		type nat hook postrouting priority srcnat; policy accept;
 		oif "enp2s0" masquerade
 	}
 }
+
 
 </details>
 
