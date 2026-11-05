@@ -284,11 +284,6 @@ table inet filter {
 
         # PORT FORWARDING DNAT RULES
 
-        # TOR (192.168.10.205)
-        ## TOR
-        iif "enp2s0" tcp dport 51419 dnat ip to 192.168.10.205
-        iif "enp2s0" udp dport 51419 dnat ip to 192.168.10.205
-
         # EXAMPLE (192.168.10.70)
         ## FTP
         #iif "enp2s0" tcp dport { 990, 40000-40100 } dnat ip to 192.168.10.70
