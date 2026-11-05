@@ -505,8 +505,8 @@ tls_authentication: GETDNS_AUTHENTICATION_REQUIRED
 tls_query_padding_blocksize: 128
 edns_client_subnet_private : 1
 round_robin_upstreams: 0
-idle_timeout: 10000
-timeout: 1500
+idle_timeout: 9000
+timeout: 500
 
 listen_addresses:
   - 127.0.0.1@5353
