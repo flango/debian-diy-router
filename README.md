@@ -317,7 +317,7 @@ offline set is meant for older devices that need no internet or internet trying 
 like older access points, managed switches, old avr and such.  
 dns_bypass is for devices that might need other dns resolvers like a gaming console if you use a  
 massive ad blocking file that blocks microsoft servers that handle achievement tracking and such.  
-DNS, port 853 is dropped unless in dns_bypass set, port 53 is hijacked and pointed to dnsmasq.  
+DNS, port 853 is dropped unless in dns_bypass set, port 53 is hijacked and pointing to dnsmasq.  
 Portforwarding example is left to show how to forward ports, ranges and protocol to ip / host.  
 
 ### 3.3 apply default firewall template
