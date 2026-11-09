@@ -217,8 +217,8 @@ table inet filter {
         # --- Router-Only IPv6 ICMP Handling ---
         ip6 nexthdr icmpv6 accept
 
-		# --- IPv6 DHCPv6 support to get public IPv6 address ---
-		#iif "enp2s0" udp dport 546 accept
+	# --- IPv6 DHCPv6 support to get public IPv6 address ---
+	#iif "enp2s0" udp dport 546 accept
 
         # --- IPv4 Specific Rules ---
         iif "enp3s0" icmp type echo-request accept
