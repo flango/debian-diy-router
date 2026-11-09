@@ -214,10 +214,10 @@ table inet filter {
         # Allow Loopback (Localhost) - handles both IPv4 and IPv6 loopback
         iif "lo" accept
 
-        # --- Router-Only IPv6 ICMP Handling ---
+        # Router-Only IPv6 ICMP Handling
         ip6 nexthdr icmpv6 accept
 
-        # --- IPv4 Specific Rules ---
+        # IPv4 Specific Rules
         iif "enp3s0" icmp type echo-request accept
 
         # Allow LAN and VPN clients access to local router services
@@ -227,7 +227,7 @@ table inet filter {
         # Allow WAN incoming connection for WireGuard handshake packets
         iif "enp2s0" udp dport 51820 accept
 
-        # --- IPv6 DHCPv6 support to get public IPv6 address ---
+        # Allow WAN incoming connection for IPv6 DHCPv6 support to get public IPv6 address
         iif "enp2s0" udp dport 546 accept
 
         # Explicitly drop any remaining incoming traffic hitting the WAN interface
