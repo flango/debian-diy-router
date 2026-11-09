@@ -104,6 +104,9 @@ sudo nano /etc/network/interfaces
 # WAN Interface
 auto enp2s0
 iface enp2s0 inet dhcp
+# To get public ipv6 address
+iface enp2s0 inet6 auto
+    accept_ra 2
 
 # LAN Interface
 auto enp3s0
@@ -125,6 +128,8 @@ sudo nano /etc/sysctl.d/99-ipforward.conf
 net.ipv4.ip_forward = 1
 net.ipv6.conf.all.forwarding = 0
 net.ipv6.conf.default.forwarding = 0
+# enp2s0 will accept IPv6 Router Advertisements
+net.ipv6.conf.enp2s0.accept_ra = 2
 ```
 
 ### 2.4 Congestion Control & Fiber Latency Tweaks
@@ -211,6 +216,9 @@ table inet filter {
 
         # --- Router-Only IPv6 ICMP Handling ---
         ip6 nexthdr icmpv6 accept
+
+		# --- IPv6 DHCPv6 support to get public IPv6 address ---
+		#iif "enp2s0" udp dport 546 accept
 
         # --- IPv4 Specific Rules ---
         iif "enp3s0" icmp type echo-request accept
